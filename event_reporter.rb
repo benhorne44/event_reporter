@@ -1,20 +1,8 @@
 require 'csv'
 
-contents = CSV.open "event_attendees.csv", headers: true, header_converters: :symbol  
-
-# contents[0] = :last_name
-# contents[1] = :first_name
-# contents[2] = :email
-# contents[3] = :zipcode
-# contents[4] = :city
-# contents[5] = :state
-# contents[6] = :address
-# contents[7] = :phone
-
 class Queue
   def initialize
     @queue = []
-    # @contents = load(filename)
   end
 
   def run
@@ -28,8 +16,7 @@ class Queue
 
   def help(input)
     @help_list = { "quit" => "exits the program", 
-      "help <command>" => "Outputs a description of a given command.",
-      "help list" => "List the available individual commands.",
+      "<command>" => "Outputs a description of a given command.",
       "queue count" => "Output the number of records in the current queue.",
       "queue clear" => "Empties the queue.",
       "queue print" => "Print out queue data table.",
@@ -37,18 +24,19 @@ class Queue
       "queue save to <filename.csv>" => "Export the current queue to the specified filename as a CSV.",
       "find" => "Load the queue with all records matching the criteria for the given attribute. \n\t'find <attribute> <criteria>'"
     }
+    
     if input == ""
-      puts "Please enter a command after 'help', or type 'help list' for more options."
-    elsif input == 'list'
-      puts "#{@help_list.keys}"
+      puts "\nHere are your available commands:" 
+      @help_list.keys.each do |key|
+        puts "\t#{key}"
+      end
+      puts "Type help 'command' for a more detailed description."
+      return @help_list.keys
+
     else
-      puts "#{@help_list[input]}"
+      puts @help_list[input]
+      return @help_list[input]
     end
-
-
-    # hash
-    # output a listing of available commands
-    # output a description of command
   end
 
   def execute_command(input)
@@ -56,8 +44,6 @@ class Queue
     @command = parts[0]
     @message = parts [1..-1].join(" ")
 
-    # if @message == "" && @command != 'help' && @command != 'quit'
-    #   puts "Please enter a message with your command."
     case @command
       when 'quit' then puts "Goodbye!"
         exit
@@ -66,36 +52,27 @@ class Queue
       when 'queue' then queue(@message)
       return self
     end
+
   end
 
-  def load(filename)
+  def load(filename = "event_attendees.csv")
+
     if filename == ""
       filename = "event_attendees.csv"
     end
-    @contents = CSV.open "#{filename}", headers: true, header_converters: :symbol  
     
-    @contents.each do |row|
-      first_name = row[:first_name]
+    @contents = CSV.read "#{filename}", headers: true, header_converters: :symbol
 
-      # puts first_name
-    end
-
+    puts "Loaded #{@contents.count} rows from #{filename}"   
+    return @contents 
   end
 
-  def headers
-    if @table.empty?
-      Array.new
-    else
-      @table.first.headers
-    end
-  end
-
-  def print_queue
-    
-    contents = CSV.open "event_attendees.csv", headers: true, header_converters: :symbol  
-    headers = contents.first.headers.to_a
-    puts headers
-    contents.each do |row|
+  def queue_print
+    puts "Printing Queue"
+    # contents = CSV.open "event_attendees.csv", headers: true, header_converters: :symbol  
+    # headers = contents.first.headers.to_a
+    puts "LAST NAME\tFIRST NAME\tEMAIL\tZIPCODE\tCITY\tSTATE\tADDRESS\tPHONE"
+    @queue.each do |row|
       first_name = row[:first_name]
       last_name = row[:last_name]
       email = row[:email_address]
@@ -104,25 +81,30 @@ class Queue
       state = row[:state]
       address = row[:street]
       phone = row[:homephone]
-      puts "*#{last_name}, #{first_name}, #{email}, #{zipcode}, #{city}, #{state}, #{address}, #{phone}"
+      puts "#{last_name}\t#{first_name}\t#{email}\t#{zipcode}\t#{city}\t#{state}\t#{address}\t#{phone}"
     end
   end
   
   def queue(input)
     case input 
       when "" then puts "Please specify your command after 'queue'"
-      when 'count' then puts @queue.count
-      when 'print' then print_queue
+      when 'count' then queue_count
+      when 'print' then queue_print
+      when 'clear' then queue_clear
 
-      end
+    end
+  end
 
-    # def queue_clear
-    #   @queue = []
-    # end
+  def queue_clear
+    @queue = []
+    puts "The queue is now empty."
+    return @queue
+  end
 
-    # def queue_print
-    #   # Print out a tab-delimited data table with a header row following this format:
-    # end
+  def queue_count
+    puts "#{@queue.count}"
+    return @queue.count
+  end
 
     # def queue_print(attribute)
       
@@ -131,9 +113,8 @@ class Queue
     # def queue_save_file
     #   output = File.open(filename, 'w')
     # end
-  end
 
 end
 
 q = Queue.new
-q.run
+# q.run
