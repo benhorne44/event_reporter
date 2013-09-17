@@ -77,22 +77,43 @@ class Queue
     @contents.each do |row|
       first_name = row[:first_name]
 
-      puts first_name
+      # puts first_name
     end
 
   end
 
+  def headers
+    if @table.empty?
+      Array.new
+    else
+      @table.first.headers
+    end
+  end
+
+  def print_queue
+    
+    contents = CSV.open "event_attendees.csv", headers: true, header_converters: :symbol  
+    headers = contents.first.headers.to_a
+    puts headers
+    contents.each do |row|
+      first_name = row[:first_name]
+      last_name = row[:last_name]
+      email = row[:email_address]
+      zipcode = row[:zipcode]
+      city = row[:city]
+      state = row[:state]
+      address = row[:street]
+      phone = row[:homephone]
+      puts "*#{last_name}, #{first_name}, #{email}, #{zipcode}, #{city}, #{state}, #{address}, #{phone}"
+    end
+  end
   
   def queue(input)
     case input 
       when "" then puts "Please specify your command after 'queue'"
       when 'count' then puts @queue.count
-      when 'print' then 
-        @contents.each do |row|
-          first_name = row[:first_name]
+      when 'print' then print_queue
 
-          puts name
-        end
       end
 
     # def queue_clear
