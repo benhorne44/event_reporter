@@ -3,6 +3,7 @@ require 'csv'
 class Queue
   def initialize
     @queue = []
+    @attendees = []
   end
 
   def run
@@ -12,6 +13,24 @@ class Queue
       input = gets.chomp
       execute_command(input)
     end
+  end
+
+  def execute_command(input)
+    parts = input.split(' ')
+    @command = parts[0]
+    message = parts [1..-1].join(" ")
+
+    case @command
+      when 'quit' then puts "Goodbye!"
+        exit
+      when 'load' then load(message)
+      when 'help' then help(message)
+      when 'queue' then queue(message)
+      when 'find' then find(parts[-2], parts[-1])
+      # when 'find' then puts 'hello'
+      return self
+    end
+
   end
 
   def help(input)
@@ -39,21 +58,6 @@ class Queue
     end
   end
 
-  def execute_command(input)
-    parts = input.split(' ')
-    @command = parts[0]
-    @message = parts [1..-1].join(" ")
-
-    case @command
-      when 'quit' then puts "Goodbye!"
-        exit
-      when 'load' then load(@message)
-      when 'help' then help(@message)
-      when 'queue' then queue(@message)
-      return self
-    end
-
-  end
 
   def load(filename = "event_attendees.csv")
 
@@ -64,7 +68,28 @@ class Queue
     @contents = CSV.read "#{filename}", headers: true, header_converters: :symbol
 
     puts "Loaded #{@contents.count} rows from #{filename}"   
-    return @contents 
+    # parse_contents(@contents)
+    return @contents
+  end
+
+  def parse_contents
+    @attendees = []
+    @headers = ['last_name', 'first_name', 'email', 'zipcode', 'city', 'state', 'address', 'phone']
+    @contents.each do |row|
+      first_name = row[:first_name]
+      last_name = row[:last_name]
+      email = row[:email_address]
+      zipcode = row[:zipcode]
+      city = row[:city]
+      state = row[:state]
+      address = row[:street]
+      phone = row[:homephone]
+
+      attendee = [last_name, first_name, email, zipcode, city, state, address, phone]
+      
+      h = Hash[@headers.zip(attendee)]
+      @attendees << h
+    end
   end
 
   def queue_print
@@ -86,13 +111,19 @@ class Queue
   end
   
   def queue(input)
-    case input 
+
+    parts = input.split(' ')
+    attribute =parts[-1]
+    message = parts[1..-1]
+    case message
       when "" then puts "Please specify your command after 'queue'"
       when 'count' then queue_count
       when 'print' then queue_print
       when 'clear' then queue_clear
-
+      when 'print by' then queue_print_by_attribute(attribute)
+      when 'save to' then queue_save_to_file(filename)
     end
+
   end
 
   def queue_clear
@@ -106,14 +137,72 @@ class Queue
     return @queue.count
   end
 
-    # def queue_print(attribute)
-      
-    # end
+  def queue_print_by_attribute(attribute)
+    # puts "#{attribute}"
+    # @queue[attribute]
+    @contents.each do |row|
+      first_name = row[:first_name]
+      last_name = row[:last_name]
+      email = row[:email_address]
+      zipcode = row[:zipcode]
+      city = row[:city]
+      state = row[:state]
+      address = row[:street]
+      phone = row[:homephone]
+      puts "#{attribute}"
+    end
+   
+    # sorted_friends = @friends.sort_by{ |friend| friend.screen_name.downcase }
 
-    # def queue_save_file
-    #   output = File.open(filename, 'w')
-    # end
+  end
 
+  def clean_criteria(input)
+    parts = input.split(' ')
+    parts.each do |part|
+      next if part.class == Fixnum
+      if part.class == String
+        part.downcase
+      end
+      clean_criteria = parts.join(' ')
+    end
+    
+
+  end
+
+  # def format
+    
+  # end
+
+  # def column_widths(fields)
+  #   widths = {}
+  #   fields.each do |field|
+  #     widths[field.downcase] = longest_value(field.downcase) + gutter
+  #   end
+  #   widths
+  # end
+
+  # def longest_value(field)
+  #   value = []
+  #   @queue.each do |person|
+  #   value.push(person[field].length)
+  #     end
+  #     value.max
+  # end
+
+  def find(attribute, criteria)
+    parse_contents
+    
+    # clean_criteria = clean_criteria(criteria)
+    @attendees.each do |attendee|
+      if attendee[attribute] == criteria
+        @queue.push(attendee)
+      end
+    end
+    # return self
+  end
+# @contents[:zipcode] = criteria
+
+ 
 end
 
 q = Queue.new
