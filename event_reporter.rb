@@ -33,8 +33,8 @@ class Queue
 
   end
 
-  def help(input)
-    @help_list = { "quit" => "exits the program", 
+  def help(input = "")
+    @help_list = { "quit" => "Exits the program", 
       "<command>" => "Outputs a description of a given command.",
       "queue count" => "Output the number of records in the current queue.",
       "queue clear" => "Empties the queue.",
@@ -60,7 +60,7 @@ class Queue
 
 
   def load(filename = "event_attendees.csv")
-
+    @queue = []
     if filename == ""
       filename = "event_attendees.csv"
     end
@@ -68,11 +68,10 @@ class Queue
     @contents = CSV.read "#{filename}", headers: true, header_converters: :symbol
 
     puts "Loaded #{@contents.count} rows from #{filename}"   
-    # parse_contents(@contents)
     return @contents
   end
 
-  def parse_contents
+  def format_contents
     @attendees = []
     @headers = ['last_name', 'first_name', 'email', 'zipcode', 'city', 'state', 'address', 'phone']
     @contents.each do |row|
@@ -81,12 +80,11 @@ class Queue
       email = row[:email_address]
       zipcode = row[:zipcode]
       city = row[:city]
-      city_downcase = city.to_s.downcase
       state = row[:state]
       address = row[:street]
       phone = row[:homephone]
 
-      attendee = [last_name.downcase, first_name.downcase, email, zipcode, city_downcase, state, address, phone]
+      attendee = [last_name.downcase, first_name.downcase, email, zipcode, city.to_s.downcase, state.to_s.downcase, address, phone]
       
       h = Hash[@headers.zip(attendee)]
       @attendees << h
@@ -99,15 +97,17 @@ class Queue
     # headers = contents.first.headers.to_a
     puts "LAST NAME\tFIRST NAME\tEMAIL\tZIPCODE\tCITY\tSTATE\tADDRESS\tPHONE"
     @queue.each do |row|
-      first_name = row[:first_name]
-      last_name = row[:last_name]
-      email = row[:email_address]
-      zipcode = row[:zipcode]
-      city = row[:city]
-      state = row[:state]
-      address = row[:street]
-      phone = row[:homephone]
-      puts "#{last_name}\t#{first_name}\t#{email}\t#{zipcode}\t#{city}\t#{state}\t#{address}\t#{phone}"
+      last_name = row["last_name"]
+      first_name = row["first_name"]
+      email = row["email"]
+      zipcode = ["zipcode"]
+      city = ["city"]
+      state = ["state"]
+      address = ["address"]
+      phone = ["phone"]
+      # puts last_name
+      puts "#{last_name.capitalize}\t#{first_name.capitalize}\t#{email}\t#{zipcode}\t#{city}\t#{state.to_s.upcase}\t#{address}\t#{phone}"
+      # {last_name}\t#{first_name}\t#{email}\t#{zipcode}\t#{city}\t#{state}\t#{address}\t#{phone}"
     end
   end
   
@@ -175,10 +175,14 @@ class Queue
     
   # end
 
+  # def buffer
+  #   @buffer = 8
+  # end
+
   # def column_widths(fields)
   #   widths = {}
-  #   fields.each do |field|
-  #     widths[field.downcase] = longest_value(field.downcase) + gutter
+  #   @queue.each do |field|
+  #     widths[field.downcase] = longest_value(field.downcase) + buffer
   #   end
   #   widths
   # end
@@ -193,7 +197,8 @@ class Queue
 
   def find(attribute, criteria)
     @queue = []
-    parse_contents
+    @attendees = []
+    format_contents
     clean_criteria = clean_criteria(criteria)
     # clean_criteria = clean_criteria(criteria)
     @attendees.each do |attendee|
@@ -201,7 +206,7 @@ class Queue
         @queue.push(attendee)
       end
     end
-    # return self
+    return self
   end
 # @contents[:zipcode] = criteria
 
