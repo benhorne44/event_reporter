@@ -176,56 +176,11 @@ class Queue
       buffer = 8
       width = 
 
-      # last_name_lengths = []
-
-      # first_name_lengths = []
-      # first_name_lengths << first_name.length
-      # email_lengths = []
-      # email_lengths << email.length
-      # last_names = []
-      # last_names << last_name.length
-
-      # column_widths = [last_name.length, first_name.length, email.length, zipcode.length, city.to_s.length, state.to_s.length, address.length, phone.length]
-      # # puts column_widths
-
-
       puts "#{last_name.capitalize.ljust(@ln_max, ' ')}\t#{first_name.capitalize.ljust(@fn_max, ' ')}\t#{email.ljust(@e_max, ' ')}\t#{zipcode.ljust(13, ' ')}\t#{city.to_s.capitalize.ljust(@c_max, ' ')}\t#{state.to_s.upcase}\t#{address}\t#{phone}"
-    # last_name_lengths = @queue.collect {|attendee| attendee[last_name].to_s.length}
-      
-
-      # {last_name}\t#{first_name}\t#{email}\t#{zipcode}\t#{city}\t#{state}\t#{address}\t#{phone}"
     end
 
-
-    # puts @last_name_lengths
-
-    # puts @email_lengths
   end
 
-    # def format
-    
-  # end
-
-  # def buffer
-  #   @buffer = 8
-  # end
-
-  # def column_widths(fields)
-  #   widths = {}
-  #   @queue.each do |field|
-  #     widths[field.downcase] = longest_value(field.downcase) + buffer
-  #   end
-  #   widths
-  # end
-
-  # def longest_value(field)
-  #   value = []
-  #   @queue.each do |person|
-  #   value.push(person[field].length)
-  #     end
-  #     value.max
-  # end
-  
   def queue(input)
     parts = input.split(' ')
     attribute =parts[-1]
@@ -288,8 +243,8 @@ class Queue
   end 
 end
 
-q = Queue.new
-# q.run
+  q = Queue.new
+  q.run
 
 
 
