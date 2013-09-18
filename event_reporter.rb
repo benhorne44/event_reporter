@@ -19,7 +19,6 @@ class Queue
     parts = input.split(' ')
     @command = parts[0]
     message = parts [1..-1].join(" ")
-
     case @command
       when 'quit' then puts "Goodbye!"
         exit
@@ -53,14 +52,13 @@ class Queue
       return @help_list.keys
 
     else
-      puts @help_list[input]
+      puts "\n#{@help_list[input]}"
       return @help_list[input]
     end
   end
 
 
-  def load(filename = "event_attendees.csv")
-    @queue = []
+  def load(filename="event_attendees.csv")
     if filename == ""
       filename = "event_attendees.csv"
     end
@@ -71,24 +69,44 @@ class Queue
     return @contents
   end
 
+  def clean_phone_number(phone_number)
+    clean_phone = phone_number.tr('^0-9', '')
+    # puts clean_phone
+    number = clean_phone.length
+    if number < 10
+      clean_phone = "Invalid Number"
+    elsif number == 10
+      clean_phone
+    elsif number == 11 && phone_number[0] == 1
+      clean_phone[1..10]
+    elsif number == 11 && phone_number[0] != 1
+      clean_phone = "Invalid Number"
+    else
+      clean_phone = "Invalid Number"
+    end
+  end
+
   def format_contents
-    @attendees = []
     @headers = ['last_name', 'first_name', 'email', 'zipcode', 'city', 'state', 'address', 'phone']
     @contents.each do |row|
       first_name = row[:first_name]
       last_name = row[:last_name]
       email = row[:email_address]
       zipcode = row[:zipcode]
+      clean_zipcode = zipcode.to_s.rjust(5, "0")[0..4]
       city = row[:city]
       state = row[:state]
       address = row[:street]
-      phone = row[:homephone]
 
-      attendee = [last_name.downcase, first_name.downcase, email, zipcode, city.to_s.downcase, state.to_s.downcase, address, phone]
+      phone = row[:homephone]
+      clean_phone_number = clean_phone_number(phone)
+
+      attendee = [last_name.downcase, first_name.downcase, email, clean_zipcode, city.to_s.downcase, state.to_s.downcase, address, clean_phone_number]
       
       h = Hash[@headers.zip(attendee)]
-      @attendees << h
+      @attendees.push(h)
     end
+    puts ""
   end
 
   def queue_print
@@ -100,22 +118,22 @@ class Queue
       last_name = row["last_name"]
       first_name = row["first_name"]
       email = row["email"]
-      zipcode = ["zipcode"]
-      city = ["city"]
-      state = ["state"]
-      address = ["address"]
-      phone = ["phone"]
+      zipcode = row["zipcode"]
+      city = row["city"]
+      state = row["state"]
+      address = row["address"]
+      phone = row["phone"]
       # puts last_name
-      puts "#{last_name.capitalize}\t#{first_name.capitalize}\t#{email}\t#{zipcode}\t#{city}\t#{state.to_s.upcase}\t#{address}\t#{phone}"
+      puts "#{last_name.capitalize}\t#{first_name.capitalize}\t#{email}\t#{zipcode}\t#{city.to_s.capitalize}\t#{state.to_s.upcase}\t#{address}\t#{phone}"
       # {last_name}\t#{first_name}\t#{email}\t#{zipcode}\t#{city}\t#{state}\t#{address}\t#{phone}"
     end
+    puts ""
   end
   
   def queue(input)
-
     parts = input.split(' ')
     attribute =parts[-1]
-    message = parts[1..-1]
+    message = parts[0..-1].join(" ")
     case message
       when "" then puts "Please specify your command after 'queue'"
       when 'count' then queue_count
@@ -200,18 +218,19 @@ class Queue
     @attendees = []
     format_contents
     clean_criteria = clean_criteria(criteria)
-    # clean_criteria = clean_criteria(criteria)
     @attendees.each do |attendee|
       if attendee[attribute] == clean_criteria
         @queue.push(attendee)
       end
     end
-    return self
-  end
-# @contents[:zipcode] = criteria
-
- 
+    puts "Found #{@queue.count} results for your search."
+  end 
 end
 
 q = Queue.new
 # q.run
+
+
+
+
+
