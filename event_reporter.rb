@@ -81,11 +81,12 @@ class Queue
       email = row[:email_address]
       zipcode = row[:zipcode]
       city = row[:city]
+      city_downcase = city.to_s.downcase
       state = row[:state]
       address = row[:street]
       phone = row[:homephone]
 
-      attendee = [last_name, first_name, email, zipcode, city, state, address, phone]
+      attendee = [last_name.downcase, first_name.downcase, email, zipcode, city_downcase, state, address, phone]
       
       h = Hash[@headers.zip(attendee)]
       @attendees << h
@@ -158,13 +159,14 @@ class Queue
 
   def clean_criteria(input)
     parts = input.split(' ')
+    clean = []
     parts.each do |part|
       next if part.class == Fixnum
       if part.class == String
-        part.downcase
+        clean.push(part.downcase)
       end
-      clean_criteria = parts.join(' ')
     end
+    clean_criteria = clean.join(' ')
     
 
   end
@@ -190,11 +192,12 @@ class Queue
   # end
 
   def find(attribute, criteria)
+    @queue = []
     parse_contents
-    
+    clean_criteria = clean_criteria(criteria)
     # clean_criteria = clean_criteria(criteria)
     @attendees.each do |attendee|
-      if attendee[attribute] == criteria
+      if attendee[attribute] == clean_criteria
         @queue.push(attendee)
       end
     end
