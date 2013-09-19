@@ -1,19 +1,15 @@
 require 'minitest'
 require 'minitest/autorun'
+
 require './event_reporter'
 require 'csv'
 
 class QueueTest < Minitest::Test
 
-  def test_it_exists
+  def test_it_is_initial_queue_empty
     q = Queue.new
-    assert_kind_of Queue, q
+    assert_equal 0, q.queue_count
   end
-
-  # def test_it_is_initial_queue_empty
-  #   q = Queue.new
-  #   assert_equal [], q
-  # end
 
   def test_it_does_it_load_a_file
     q = Queue.new
@@ -24,13 +20,13 @@ class QueueTest < Minitest::Test
   end
 
   def test_it_does_help_list_produce_a_list_of_commands
-    help_list = { "quit" => "exits the program", 
+    help_list = { "quit" => "Exits the program", 
       "<command>" => "Outputs a description of a given command.",
       "queue count" => "Output the number of records in the current queue.",
       "queue clear" => "Empties the queue.",
       "queue print" => "Print out queue data table.",
       "queue print by <attribute>" => "Print the data table sorted by specified attribute.",
-      "queue save to <filename.csv>" => "Export the current queue to the specified filename as a CSV.",
+      "queue save to file" => "Export the current queue to the specified filename and file type. \n\tSupported filename extensions: csv, txt, json and xml.\n\tex: queue save to eventreporter.txt",
       "find" => "Load the queue with all records matching the criteria for the given attribute. \n\t'find <attribute> <criteria>'"
     }
     q = Queue.new

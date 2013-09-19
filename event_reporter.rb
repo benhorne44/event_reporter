@@ -32,6 +32,17 @@ class Queue
 
   end
 
+  def load(filename="event_attendees.csv")
+    if filename == ""
+      filename = "event_attendees.csv"
+    end
+    @queue = []
+    @contents = CSV.read "#{filename}", headers: true, header_converters: :symbol
+
+    puts "Loaded #{@contents.count} rows from #{filename}"   
+    return @contents
+  end
+
   def help(input = "")
     @help_list = { "quit" => "Exits the program", 
       "<command>" => "Outputs a description of a given command.",
@@ -57,36 +68,22 @@ class Queue
     end
   end
 
-
-  def load(filename="event_attendees.csv")
-    if filename == ""
-      filename = "event_attendees.csv"
-    end
-    @queue = []
-    @contents = CSV.read "#{filename}", headers: true, header_converters: :symbol
-
-    puts "Loaded #{@contents.count} rows from #{filename}"   
-    return @contents
-  end
-
-  def clean_phone_number(phone_number)
-    clean_phone = phone_number.to_s.tr('^0-9', '')
-    # puts clean_phone
-    number = clean_phone.length
-    if number < 10
-      clean_phone = "Invalid Number"
-    elsif number == 10
-      clean_phone
-    elsif number == 11 && phone_number[0] == 1
-      clean_phone[1..10]
-    elsif number == 11 && phone_number[0] != 1
-      clean_phone = "Invalid Number"
+  def find(attribute, criteria)
+    if @contents.nil?
+      puts "\tPlease load a file."
     else
-      clean_phone = "Invalid Number"
+      @queue = []
+      @attendees = []
+      format_contents
+      clean_criteria = clean_criteria(criteria)
+      @attendees.each do |attendee|
+        if attendee[attribute] == clean_criteria
+          @queue.push(attendee)
+        end
+      end
+      puts "\tFound #{@queue.count} results for your search."
     end
-  end
-
-
+  end 
 
   def format_contents
     @headers = ['last_name', 'first_name', 'email', 'zipcode', 'city', 'state', 'address', 'phone']
@@ -108,6 +105,64 @@ class Queue
       @attendees.push(h)
 
     end
+  end
+
+  def clean_phone_number(phone_number)
+    clean_phone = phone_number.to_s.tr('^0-9', '')
+    # puts clean_phone
+    number = clean_phone.length
+    if number < 10
+      clean_phone = ""
+    elsif number == 10
+      clean_phone
+    elsif number == 11 && phone_number[0] == 1
+      clean_phone[1..10]
+    elsif number == 11 && phone_number[0] != 1
+      clean_phone = ""
+    else
+      clean_phone = ""
+    end
+  end
+
+  def queue(input)
+    parts = input.split(' ')
+    attribute =parts[-1]
+    message = parts[0..-1].join(" ")
+    output = parts[0..-2].join(" ")
+    filename = attribute
+    case message
+      when "" then puts "\tPlease specify your command after 'queue'"
+      when 'count' then queue_count
+      when 'print' then queue_print
+      when 'clear' then queue_clear
+    end
+    case output
+      when 'print by' then queue_print_by_attribute(attribute)
+      when 'save to' then queue_save_to_file(filename)
+    end
+
+  end
+
+  def queue_print
+    if @contents.nil?
+      puts "\tPlease load a file first."
+    else
+      max_column_width
+      puts "Printing Queue"
+      puts "#{'LAST NAME'.ljust(@ln_max, ' ')}#{'FIRST NAME'.ljust(@fn_max, ' ')}#{'EMAIL'.ljust(@e_max, ' ')}#{'ZIPCODE'.ljust(13, ' ')}#{'CITY'.ljust(@c_max, ' ')}#{'STATE'.ljust(10, ' ')}#{'ADDRESS'.ljust(@a_max, ' ')}#{'PHONE'.ljust(18, ' ')}"
+      @queue.each do |row|
+        last_name = row["last_name"]
+        first_name = row["first_name"]
+        email = row["email"]
+        zipcode = row["zipcode"]
+        city = row["city"]
+        state = row["state"]
+        address = row["address"]
+        phone = row["phone"]
+        puts "#{last_name.capitalize.ljust(@ln_max, ' ')}#{first_name.capitalize.ljust(@fn_max, ' ')}#{email.to_s.ljust(@e_max, ' ')}#{zipcode.ljust(13, ' ')}#{city.to_s.ljust(@c_max, ' ')}#{state.to_s.upcase.ljust(10, ' ')}#{address.to_s.ljust(@a_max, ' ')}#{phone.ljust(18, ' ')}"
+      end
+    end
+    return nil
   end
 
   def max_column_width
@@ -137,47 +192,6 @@ class Queue
       name['address'].to_s.length
     end
     @a_max = a_values.max + buffer
-
-  end
-
-  def queue_print
-    if @contents.nil?
-      puts "\tPlease load a file first."
-    else
-      max_column_width
-      puts "Printing Queue"
-      puts "#{'LAST NAME'.ljust(@ln_max, ' ')}#{'FIRST NAME'.ljust(@fn_max, ' ')}#{'EMAIL'.ljust(@e_max, ' ')}#{'ZIPCODE'.ljust(13, ' ')}#{'CITY'.ljust(@c_max, ' ')}#{'STATE'.ljust(10, ' ')}#{'ADDRESS'.ljust(@a_max, ' ')}#{'PHONE'.ljust(18, ' ')}"
-      @queue.each do |row|
-        last_name = row["last_name"]
-        first_name = row["first_name"]
-        email = row["email"]
-        zipcode = row["zipcode"]
-        city = row["city"]
-        state = row["state"]
-        address = row["address"]
-        phone = row["phone"]
-        puts "#{last_name.capitalize.ljust(@ln_max, ' ')}#{first_name.capitalize.ljust(@fn_max, ' ')}#{email.ljust(@e_max, ' ')}#{zipcode.ljust(13, ' ')}#{city.to_s.ljust(@c_max, ' ')}#{state.to_s.upcase.ljust(10, ' ')}#{address.ljust(@a_max, ' ')}#{phone.ljust(18, ' ')}"
-      end
-    end
-    return nil
-  end
-
-  def queue(input)
-    parts = input.split(' ')
-    attribute =parts[-1]
-    message = parts[0..-1].join(" ")
-    output = parts[0..-2].join(" ")
-    filename = attribute
-    case message
-      when "" then puts "\tPlease specify your command after 'queue'"
-      when 'count' then queue_count
-      when 'print' then queue_print
-      when 'clear' then queue_clear
-    end
-    case output
-      when 'print by' then queue_print_by_attribute(attribute)
-      when 'save to' then queue_save_to_file(filename)
-    end
 
   end
 
@@ -266,28 +280,10 @@ class Queue
   end
 
 
-
-  def find(attribute, criteria)
-    if @contents.nil?
-      puts "\tPlease load a file."
-    else
-      @queue = []
-      @attendees = []
-      format_contents
-      clean_criteria = clean_criteria(criteria)
-      @attendees.each do |attendee|
-        if attendee[attribute] == clean_criteria
-          @queue.push(attendee)
-        end
-      end
-      puts "\tFound #{@queue.count} results for your search."
-    end
-  end 
-  
 end
 
   q = Queue.new
-  q.run
+  # q.run
 
 
 
