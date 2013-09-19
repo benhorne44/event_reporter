@@ -21,12 +21,12 @@ class Queue
     @command = parts[0]
     message = parts [1..-1].join(" ")
     case @command
-      when 'quit' then puts "Goodbye!"
+      when 'quit' then puts "\tGoodbye!"
         exit
       when 'load' then load(message)
       when 'help' then help(message)
       when 'queue' then queue(message)
-      when 'find' then find(parts[-2], parts[-1])
+      when 'find' then find(parts[1], parts[2..-1].join(" "))
       return self
     end
 
@@ -39,7 +39,7 @@ class Queue
       "queue clear" => "Empties the queue.",
       "queue print" => "Print out queue data table.",
       "queue print by <attribute>" => "Print the data table sorted by specified attribute.",
-      "queue save to <filename.csv>" => "Export the current queue to the specified filename as a CSV.",
+      "queue save to file" => "Export the current queue to the specified filename and file type. \n\tSupported filename extensions: csv, txt, json and xml.\n\tex: queue save to eventreporter.txt",
       "find" => "Load the queue with all records matching the criteria for the given attribute. \n\t'find <attribute> <criteria>'"
     }
     
@@ -48,7 +48,7 @@ class Queue
       @help_list.keys.each do |key|
         puts "\t#{key}"
       end
-      puts "Type help 'command' for a more detailed description."
+      puts "\tType help 'command' for a more detailed description."
       return @help_list.keys
 
     else
@@ -62,7 +62,7 @@ class Queue
     if filename == ""
       filename = "event_attendees.csv"
     end
-    
+    @queue = []
     @contents = CSV.read "#{filename}", headers: true, header_converters: :symbol
 
     puts "Loaded #{@contents.count} rows from #{filename}"   
@@ -70,7 +70,7 @@ class Queue
   end
 
   def clean_phone_number(phone_number)
-    clean_phone = phone_number.tr('^0-9', '')
+    clean_phone = phone_number.to_s.tr('^0-9', '')
     # puts clean_phone
     number = clean_phone.length
     if number < 10
@@ -108,59 +108,56 @@ class Queue
       @attendees.push(h)
 
     end
-
   end
 
   def max_column_width
+    buffer = 8
 
-    buffer = 4
-    
-    ln_values = @contents[:last_name].collect do |name|
-      name.to_s.length
+    ln_values = @queue.collect do |name|
+      name['last_name'].to_s.length
     end
     @ln_max = ln_values.max + buffer
 
-    fn_values = @contents[:first_name].collect do |name|
-      name.to_s.length
+    fn_values = @queue.collect do |name|
+      name['first_name'].to_s.length
     end
     @fn_max = fn_values.max + buffer
 
-    e_values = @contents[:email_address].collect do |name|
-      name.to_s.length
+    e_values = @queue.collect do |name|
+      name['email'].to_s.length
     end
     @e_max = e_values.max + buffer
 
-    c_values = @contents[:city].collect do |name|
-      name.to_s.length
+    c_values = @queue.collect do |name|
+      name['city'].to_s.length
     end
     @c_max = c_values.max + buffer
 
-    a_values = @contents[:street].collect do |name|
-      name.to_s.length
+    a_values = @queue.collect do |name|
+      name['address'].to_s.length
     end
     @a_max = a_values.max + buffer
 
   end
 
-  def sort_queue(attribute)
-    @queue = @queue.sort_by{|attendee| attendee[attribute]}
-  end
-
   def queue_print
-
-    max_column_width
-    puts "Printing Queue"
-    puts "#{'LAST NAME'.ljust(@ln_max, ' ')}#{'FIRST NAME'.ljust(@fn_max, ' ')}#{'EMAIL'.ljust(@e_max, ' ')}#{'ZIPCODE'.ljust(13, ' ')}#{'CITY'.ljust(@c_max, ' ')}#{'STATE'.ljust(10, ' ')}#{'ADDRESS'.ljust(@a_max, ' ')}#{'PHONE'.ljust(18, ' ')}"
-    @queue.each do |row|
-      last_name = row["last_name"]
-      first_name = row["first_name"]
-      email = row["email"]
-      zipcode = row["zipcode"]
-      city = row["city"]
-      state = row["state"]
-      address = row["address"]
-      phone = row["phone"]
-      puts "#{last_name.capitalize.ljust(@ln_max, ' ')}#{first_name.capitalize.ljust(@fn_max, ' ')}#{email.ljust(@e_max, ' ')}#{zipcode.ljust(13, ' ')}#{city.to_s.capitalize.ljust(@c_max, ' ')}#{state.to_s.upcase.ljust(10, ' ')}#{address.ljust(@a_max, ' ')}#{phone.ljust(18, ' ')}"
+    if @contents.nil?
+      puts "\tPlease load a file first."
+    else
+      max_column_width
+      puts "Printing Queue"
+      puts "#{'LAST NAME'.ljust(@ln_max, ' ')}#{'FIRST NAME'.ljust(@fn_max, ' ')}#{'EMAIL'.ljust(@e_max, ' ')}#{'ZIPCODE'.ljust(13, ' ')}#{'CITY'.ljust(@c_max, ' ')}#{'STATE'.ljust(10, ' ')}#{'ADDRESS'.ljust(@a_max, ' ')}#{'PHONE'.ljust(18, ' ')}"
+      @queue.each do |row|
+        last_name = row["last_name"]
+        first_name = row["first_name"]
+        email = row["email"]
+        zipcode = row["zipcode"]
+        city = row["city"]
+        state = row["state"]
+        address = row["address"]
+        phone = row["phone"]
+        puts "#{last_name.capitalize.ljust(@ln_max, ' ')}#{first_name.capitalize.ljust(@fn_max, ' ')}#{email.ljust(@e_max, ' ')}#{zipcode.ljust(13, ' ')}#{city.to_s.ljust(@c_max, ' ')}#{state.to_s.upcase.ljust(10, ' ')}#{address.ljust(@a_max, ' ')}#{phone.ljust(18, ' ')}"
+      end
     end
     return nil
   end
@@ -169,11 +166,15 @@ class Queue
     parts = input.split(' ')
     attribute =parts[-1]
     message = parts[0..-1].join(" ")
+    output = parts[0..-2].join(" ")
+    filename = attribute
     case message
-      when "" then puts "Please specify your command after 'queue'"
+      when "" then puts "\tPlease specify your command after 'queue'"
       when 'count' then queue_count
       when 'print' then queue_print
       when 'clear' then queue_clear
+    end
+    case output
       when 'print by' then queue_print_by_attribute(attribute)
       when 'save to' then queue_save_to_file(filename)
     end
@@ -181,13 +182,17 @@ class Queue
   end
 
   def queue_clear
-    @queue = []
-    puts "The queue is now empty."
+    if @contents.nil?
+      puts "\tThe queue is already empty. Please load a file."
+    else
+      @queue = []
+      puts "\tThe queue is now empty."
+    end
     return @queue
   end
 
   def queue_count
-    puts "#{@queue.count}"
+    puts "\tQueue count = #{@queue.count}"
     return @queue.count
   end
 
@@ -211,19 +216,34 @@ class Queue
     end
   end
 
-  def queue_save_to_csv_file(filename)
-    queue_format_people
-    output_filename = "#{filename}.csv"
-    headers = CSV.generate do |csv|
-        csv << @headers
-      end
-    out = File.open(output_filename, "w")
-    out.write(headers)
-      @people.each do |person|
-        out.write(person)
-      end
-    out.close
+  def queue_save_to_file(input)
+    if @contents.nil?
+      puts "\tThere is nothing to save, please load a file."  
+    else
+      parts = input.split('.')
+      filename = parts[0]
+      type = parts[-1]
+      queue_format_people
+      output_filename = "#{filename}.#{type}"
+
+      puts "\tSaving your file..."
+      headers = CSV.generate do |csv|
+          csv << @headers
+        end
+      out = File.open(output_filename, "w")
+      out.write(headers)
+        @people.each do |person|
+          out.write(person)
+        end
+      out.close
+    end
   end
+
+
+  def sort_queue(attribute)
+    @queue = @queue.sort_by{|attendee| attendee[attribute]}
+  end
+
 
   def queue_print_by_attribute(attribute)
     sort_queue(attribute)
@@ -248,16 +268,20 @@ class Queue
 
 
   def find(attribute, criteria)
-    @queue = []
-    @attendees = []
-    format_contents
-    clean_criteria = clean_criteria(criteria)
-    @attendees.each do |attendee|
-      if attendee[attribute] == clean_criteria
-        @queue.push(attendee)
+    if @contents.nil?
+      puts "\tPlease load a file."
+    else
+      @queue = []
+      @attendees = []
+      format_contents
+      clean_criteria = clean_criteria(criteria)
+      @attendees.each do |attendee|
+        if attendee[attribute] == clean_criteria
+          @queue.push(attendee)
+        end
       end
+      puts "\tFound #{@queue.count} results for your search."
     end
-    puts "Found #{@queue.count} results for your search."
   end 
   
 end
