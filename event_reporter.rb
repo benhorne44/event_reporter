@@ -1,5 +1,6 @@
 require 'csv'
 
+
 class Queue
   def initialize
     @queue = []
@@ -26,7 +27,6 @@ class Queue
       when 'help' then help(message)
       when 'queue' then queue(message)
       when 'find' then find(parts[-2], parts[-1])
-      # when 'find' then puts 'hello'
       return self
     end
 
@@ -89,13 +89,6 @@ class Queue
 
 
   def format_contents
-    last_name_lengths = []
-    first_name_lengths = []
-    email_lengths = []
-    city_lengths = []
-    address_lengths = []
-    buffer = 8
-
     @headers = ['last_name', 'first_name', 'email', 'zipcode', 'city', 'state', 'address', 'phone']
     @contents.each do |row|
       first_name = row[:first_name]
@@ -114,44 +107,38 @@ class Queue
       h = Hash[@headers.zip(attendee)]
       @attendees.push(h)
 
-      # column_widths = [last_name.length, first_name.length, email.length, zipcode.length, city.to_s.length, state.to_s.length, address.length, phone.length]
-      # format_column_widths(last_name, first_name, email, clean_zipcode, city, state, address, phone)
-          
-
-
-      last_name_width = [last_name.length]
-      last_name_lengths.push(last_name_width)
-      ln_max = last_name_lengths.max
-      @ln_max = ln_max.first + buffer
-      first_name_width = [first_name.length]
-      first_name_lengths.push(first_name_width)
-      fn_max = first_name_lengths.max
-      @fn_max = fn_max.first + buffer
-      email_width = [email.length]
-      email_lengths.push(email_width)
-      e_max = email_lengths.max 
-      @e_max = e_max.first + buffer
-      city_width = [city.to_s.length]
-      city_lengths.push(city_width)
-      c_max = city_lengths.max 
-      @c_max = c_max.first + buffer
-      address_width = [address.to_s.length]
-      address_lengths.push(address_width)
-      a_max = address_lengths.max 
-      @a_max = a_max.first + buffer
-     
     end
-     puts @ln_max
-     puts @fn_max
-     puts @e_max
-     puts @c_max
-     puts @a_max
 
-    # puts @first_name_lengths.max
-    # puts ""
   end
 
-  def format_column_widths(last_name, first_name, email, clean_zipcode, city, state, address, phone)
+  def max_column_width
+
+    buffer = 4
+    
+    ln_values = @contents[:last_name].collect do |name|
+      name.to_s.length
+    end
+    @ln_max = ln_values.max + buffer
+
+    fn_values = @contents[:first_name].collect do |name|
+      name.to_s.length
+    end
+    @fn_max = fn_values.max + buffer
+
+    e_values = @contents[:email_address].collect do |name|
+      name.to_s.length
+    end
+    @e_max = e_values.max + buffer
+
+    c_values = @contents[:city].collect do |name|
+      name.to_s.length
+    end
+    @c_max = c_values.max + buffer
+
+    a_values = @contents[:street].collect do |name|
+      name.to_s.length
+    end
+    @a_max = a_values.max + buffer
 
   end
 
@@ -160,9 +147,9 @@ class Queue
   end
 
   def queue_print
+
+    max_column_width
     puts "Printing Queue"
-    # contents = CSV.open "event_attendees.csv", headers: true, header_converters: :symbol  
-    # headers = contents.first.headers.to_a
     puts "#{'LAST NAME'.ljust(@ln_max, ' ')}#{'FIRST NAME'.ljust(@fn_max, ' ')}#{'EMAIL'.ljust(@e_max, ' ')}#{'ZIPCODE'.ljust(13, ' ')}#{'CITY'.ljust(@c_max, ' ')}#{'STATE'.ljust(10, ' ')}#{'ADDRESS'.ljust(@a_max, ' ')}#{'PHONE'.ljust(18, ' ')}"
     @queue.each do |row|
       last_name = row["last_name"]
@@ -173,12 +160,9 @@ class Queue
       state = row["state"]
       address = row["address"]
       phone = row["phone"]
-      buffer = 8
-      width = 
-
-      puts "#{last_name.capitalize.ljust(@ln_max, ' ')}\t#{first_name.capitalize.ljust(@fn_max, ' ')}\t#{email.ljust(@e_max, ' ')}\t#{zipcode.ljust(13, ' ')}\t#{city.to_s.capitalize.ljust(@c_max, ' ')}\t#{state.to_s.upcase}\t#{address}\t#{phone}"
+      puts "#{last_name.capitalize.ljust(@ln_max, ' ')}#{first_name.capitalize.ljust(@fn_max, ' ')}#{email.ljust(@e_max, ' ')}#{zipcode.ljust(13, ' ')}#{city.to_s.capitalize.ljust(@c_max, ' ')}#{state.to_s.upcase.ljust(10, ' ')}#{address.ljust(@a_max, ' ')}#{phone.ljust(18, ' ')}"
     end
-
+    return nil
   end
 
   def queue(input)
@@ -205,6 +189,40 @@ class Queue
   def queue_count
     puts "#{@queue.count}"
     return @queue.count
+  end
+
+  def queue_format_people
+    @people = []
+    @queue.each do |row|
+      last_name = row["last_name"]
+      first_name = row["first_name"]
+      email = row["email"]
+      zipcode = row["zipcode"]
+      city = row["city"]
+      state = row["state"]
+      address = row["address"]
+      phone = row["phone"]
+
+      person = ["#{last_name}", "#{first_name}", "#{email}", "#{zipcode}", "#{city}", "#{state}", "#{address}", "#{phone}"]
+      people = CSV.generate do |csv|
+        csv << person
+      end
+      @people.push(people)
+    end
+  end
+
+  def queue_save_to_csv_file(filename)
+    queue_format_people
+    output_filename = "#{filename}.csv"
+    headers = CSV.generate do |csv|
+        csv << @headers
+      end
+    out = File.open(output_filename, "w")
+    out.write(headers)
+      @people.each do |person|
+        out.write(person)
+      end
+    out.close
   end
 
   def queue_print_by_attribute(attribute)
@@ -241,6 +259,7 @@ class Queue
     end
     puts "Found #{@queue.count} results for your search."
   end 
+  
 end
 
   q = Queue.new
