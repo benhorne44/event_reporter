@@ -1,10 +1,11 @@
 require 'csv'
+require './lib/help_message'
+require './lib/find_attribute'
+require './lib/format_contents'
 
-
-class Queue
+class EventReporter
   def initialize
-    @queue = []
-    @attendees = []
+    queue = []
   end
 
   def run
@@ -16,113 +17,78 @@ class Queue
     end
   end
 
+  def queue
+    @queue
+  end
+
+  def check_if_file_loaded
+    if @contents.nil?
+      puts "\tPlease load a file."
+    end
+  end
+
   def execute_command(input)
-    parts = input.split(' ')
+    parts = input.split(' ', 3)
     @command = parts[0]
-    message = parts [1..-1].join(" ")
+    message = parts [1, 2].join(" ")
+    attribute = parts[1]
+    criteria = parts[2]
+    send_inputs(message, attribute, criteria)
+  end
+
+  def send_inputs(message, attribute, criteria)
     case @command
       when 'quit' then puts "\tGoodbye!"
         exit
       when 'load' then load(message)
-      when 'help' then help(message)
+      when 'help' then HelpMessage.for(message)
       when 'queue' then queue(message)
-      when 'find' then find(parts[1], parts[2..-1].join(" "))
+      # when 'find' then find(parts[1], parts[2..-1].join(" "))
+      when 'find' then find(attribute, criteria)
       return self
     end
-
   end
 
   def load(filename="event_attendees.csv")
+    queue_clear
+    check_filename(filename)
+    format_and_save_file_contents(filename)
+  end
+
+  def check_filename(filename)
     if filename == ""
       filename = "event_attendees.csv"
     end
-    @queue = []
-    @contents = CSV.read "#{filename}", headers: true, header_converters: :symbol
-
-    puts "Loaded #{@contents.count} rows from #{filename}"   
-    return @contents
   end
 
-  def help(input = "")
-    @help_list = { "quit" => "Exits the program", 
-      "<command>" => "Outputs a description of a given command.",
-      "queue count" => "Output the number of records in the current queue.",
-      "queue clear" => "Empties the queue.",
-      "queue print" => "Print out queue data table.",
-      "queue print by <attribute>" => "Print the data table sorted by specified attribute.",
-      "queue save to file" => "Export the current queue to the specified filename and file type. \n\tSupported filename extensions: csv, txt, json and xml.\n\tex: queue save to eventreporter.txt",
-      "find" => "Load the queue with all records matching the criteria for the given attribute. \n\t'find <attribute> <criteria>'"
-    }
-    
-    if input == ""
-      puts "\nHere are your available commands:" 
-      @help_list.keys.each do |key|
-        puts "\t#{key}"
-      end
-      puts "\tType help 'command' for a more detailed description."
-      return @help_list.keys
-
-    else
-      puts "\n#{@help_list[input]}"
-      return @help_list[input]
-    end
+  def format_and_save_file_contents(filename)
+    contents = CSV.read "#{filename}", headers: true, header_converters: :symbol
+    @formatted_contents = FormatContents.new(contents).format_contents
+    puts "Loaded #{@formatted_contents.count} rows from #{filename}"   
   end
 
   def find(attribute, criteria)
-    if @contents.nil?
-      puts "\tPlease load a file."
-    else
-      @queue = []
-      @attendees = []
-      format_contents
-      clean_criteria = clean_criteria(criteria)
-      @attendees.each do |attendee|
-        if attendee[attribute] == clean_criteria
-          @queue.push(attendee)
-        end
-      end
-      puts "\tFound #{@queue.count} results for your search."
-    end
-  end 
-
-  def format_contents
-    @headers = ['last_name', 'first_name', 'email', 'zipcode', 'city', 'state', 'address', 'phone']
-    @contents.each do |row|
-      first_name = row[:first_name]
-      last_name = row[:last_name]
-      email = row[:email_address]
-      zipcode = row[:zipcode]
-      clean_zipcode = zipcode.to_s.rjust(5, "0")[0..4]
-      city = row[:city]
-      state = row[:state]
-      address = row[:street]
-
-      phone = row[:homephone]
-      clean_phone_number = clean_phone_number(phone)
-
-      attendee = [last_name.downcase, first_name.downcase, email, clean_zipcode, city.to_s.downcase, state.to_s.downcase, address, clean_phone_number]
-      h = Hash[@headers.zip(attendee)]
-      @attendees.push(h)
-
-    end
+    check_if_file_loaded
+    FindAttribute.new(attribute, criteria)
   end
 
-  def clean_phone_number(phone_number)
-    clean_phone = phone_number.to_s.tr('^0-9', '')
-    # puts clean_phone
-    number = clean_phone.length
-    if number < 10
-      clean_phone = ""
-    elsif number == 10
-      clean_phone
-    elsif number == 11 && phone_number[0] == 1
-      clean_phone[1..10]
-    elsif number == 11 && phone_number[0] != 1
-      clean_phone = ""
-    else
-      clean_phone = ""
-    end
-  end
+  # def find(attribute, criteria)
+  #   check_if_file_loaded
+  #   # if @contents.nil?
+  #   #   puts "\tPlease load a file."
+  #   # else
+  #     queue = []
+  #     @attendees = []
+  #     format_contents
+  #     clean_criteria = clean_criteria(criteria)
+  #     @attendees.each do |attendee|
+  #       if attendee[attribute] == clean_criteria
+  #         queue.push(attendee)
+  #       end
+  #     end
+  #     puts "\tFound #{queue.count} results for your search."
+  #   # end
+  # end 
 
   def queue(input)
     parts = input.split(' ')
@@ -144,9 +110,7 @@ class Queue
   end
 
   def queue_print
-    if @contents.nil?
-      puts "\tPlease load a file first."
-    else
+    check_if_file_loaded
       max_column_width
       puts "Printing Queue"
       puts "#{'LAST NAME'.ljust(@ln_max, ' ')}#{'FIRST NAME'.ljust(@fn_max, ' ')}#{'EMAIL'.ljust(@e_max, ' ')}#{'ZIPCODE'.ljust(13, ' ')}#{'CITY'.ljust(@c_max, ' ')}#{'STATE'.ljust(10, ' ')}#{'ADDRESS'.ljust(@a_max, ' ')}#{'PHONE'.ljust(18, ' ')}"
@@ -161,7 +125,7 @@ class Queue
         phone = row["phone"]
         puts "#{last_name.capitalize.ljust(@ln_max, ' ')}#{first_name.capitalize.ljust(@fn_max, ' ')}#{email.to_s.ljust(@e_max, ' ')}#{zipcode.ljust(13, ' ')}#{city.to_s.ljust(@c_max, ' ')}#{state.to_s.upcase.ljust(10, ' ')}#{address.to_s.ljust(@a_max, ' ')}#{phone.ljust(18, ' ')}"
       end
-    end
+    # end
     return nil
   end
 
@@ -196,23 +160,18 @@ class Queue
   end
 
   def queue_clear
-    if @contents.nil?
-      puts "\tThe queue is already empty. Please load a file."
-    else
-      @queue = []
-      puts "\tThe queue is now empty."
-    end
-    return @queue
+      queue = []
+    return queue
   end
 
   def queue_count
-    puts "\tQueue count = #{@queue.count}"
-    return @queue.count
+    puts "\tQueue count = #{queue.count}"
+    return queue.count
   end
 
   def queue_format_people
     @people = []
-    @queue.each do |row|
+    queue.each do |row|
       last_name = row["last_name"]
       first_name = row["first_name"]
       email = row["email"]
@@ -255,7 +214,7 @@ class Queue
 
 
   def sort_queue(attribute)
-    @queue = @queue.sort_by{|attendee| attendee[attribute]}
+    queue = queue.sort_by{|attendee| attendee[attribute]}
   end
 
 
@@ -265,24 +224,12 @@ class Queue
    
   end
 
-  def clean_criteria(input)
-    parts = input.split(' ')
-    clean = []
-    parts.each do |part|
-      next if part.class == Fixnum
-      if part.class == String
-        clean.push(part.downcase)
-      end
-    end
-    clean_criteria = clean.join(' ')
-    
-
-  end
+  
 
 
 end
 
-  q = Queue.new
+  q = EventReporter.new
   # q.run
 
 
