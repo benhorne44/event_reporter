@@ -7,9 +7,8 @@ class HelpMessage
       "queue count" => "Output the number of records in the current queue.",
       "queue clear" => "Empties the queue.",
       "queue print" => "Print out queue data table.",
-      "queue print by <attribute>" => "Print the data table sorted by specified attribute.",
-      "queue save to file" => "Export the current queue to the specified filename and file type. 
-        \n\tSupported filename extensions: csv, txt, json and xml.\n\tex: queue save to event_reporter.txt",
+      "queue print by attribute" => "Print the data table sorted by specified attribute.",
+      "queue save to file" => "Export the current queue to the specified filename and file type. \n\tex: queue save to event_reporter.csv",
       "find" => "Load the queue with all records matching the criteria for the given attribute. \n\t'find <attribute> <criteria>'"
     }
 

@@ -1,16 +1,14 @@
+require 'pry'
+
 class FormatContents
 
   def initialize(contents)
-    @contents = contents
-  end
-
-  def headers
-    ['last_name', 'first_name', 'email', 'zipcode', 'city', 'state', 'address', 'phone']
+    format_contents(contents)
   end
 
 
-  def format_contents
-    formatted_contents = @contents.collect do |row|
+  def format_contents(contents)
+    formatted_contents = contents.collect do |row|
       reg_date = row[:regdate]
       first_name = row[:first_name]
       last_name = row[:last_name]
@@ -23,8 +21,8 @@ class FormatContents
 
       clean_phone_number = clean_phone_number(phone)
       clean_zipcode = zipcode.to_s.rjust(5, "0")[0..4]
-      puts clean_phone_number
-      [last_name.downcase, first_name.downcase, email, clean_zipcode, city.to_s.downcase, state.to_s.downcase, address, clean_phone_number]
+
+      [last_name.downcase, first_name.downcase, email, clean_zipcode, city.to_s.downcase, state.to_s.downcase, address, clean_phone_number, reg_date]
     end
     return formatted_contents
   end
@@ -48,3 +46,4 @@ class FormatContents
 
 
 end
+
